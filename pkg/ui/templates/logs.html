@@ -1,0 +1,56 @@
+{{define "title"}}Logs · {{.TestName}}{{end}}
+{{define "content"}}
+<div class="toolbar">
+  <a href="/tests/{{.TestName}}">← {{.TestName}}</a>
+  <span class="muted">Pod {{.PodName}} · live stream</span>
+</div>
+<h1>Runner logs</h1>
+{{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+<pre id="logs" class="logs">connecting…</pre>
+<script>
+(function () {
+  const el = document.getElementById("logs");
+  let stick = true;
+  el.addEventListener("scroll", function () {
+    stick = el.scrollTop + el.clientHeight >= el.scrollHeight - 24;
+  });
+  function append(text) {
+    if (el.textContent === "connecting…" || el.textContent === "(no log output yet)") {
+      el.textContent = "";
+    }
+    el.textContent += text;
+    if (stick) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }
+  fetch("/tests/{{.TestName}}/logs/stream")
+    .then(function (res) {
+      if (!res.ok) {
+        return res.text().then(function (t) {
+          throw new Error(t || res.statusText);
+        });
+      }
+      if (!res.body) {
+        throw new Error("no response body");
+      }
+      el.textContent = "";
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      function read() {
+        return reader.read().then(function (result) {
+          if (result.done) {
+            append("\n--- stream ended ---\n");
+            return;
+          }
+          append(decoder.decode(result.value, { stream: true }));
+          return read();
+        });
+      }
+      return read();
+    })
+    .catch(function (err) {
+      el.textContent = String(err.message || err);
+    });
+})();
+</script>
+{{end}}

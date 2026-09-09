@@ -1,0 +1,80 @@
+{{define "title"}}New Reliability Test{{end}}
+{{define "content"}}
+<h1>New Reliability Test</h1>
+{{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+<p class="muted">Required: name, scenario, auth secret, image. Everything else is optional.</p>
+<form class="stack" method="post" action="/tests">
+  <label for="name">Name *</label>
+  <input id="name" name="name" required pattern="[a-z0-9]([-a-z0-9]*[a-z0-9])?" placeholder="small-cluster-smoke">
+
+  <label for="scenario">Scenario * <span class="muted">(start.sh -c)</span></label>
+  <input id="scenario" name="scenario" required value="reliability-small-cluster.yaml">
+
+  <label for="authSecret">Auth secret * <span class="muted">(start.sh -p /auth)</span></label>
+  <select id="authSecret" name="authSecret" required>
+    {{range .AuthSecrets}}
+    <option value="{{.Name}}">{{.Name}}</option>
+    {{else}}
+    <option value="" disabled selected>No harness auth secrets</option>
+    {{end}}
+  </select>
+  <p class="muted"><a href="/secrets/new">Add auth secret</a></p>
+
+  <label for="duration">Duration <span class="muted">(start.sh -t, default 10m)</span></label>
+  <input id="duration" name="duration" value="10m" placeholder="10m">
+
+  <label for="image">Image *</label>
+  <input id="image" name="image" required placeholder="registry.build13.ci.openshift.org/test-harness/reliability-runner:latest">
+
+  <label for="toleranceRate">Tolerance rate <span class="muted">(start.sh -r)</span></label>
+  <input id="toleranceRate" name="toleranceRate" placeholder="1">
+
+  <label for="folderName">Folder name <span class="muted">(start.sh -n)</span></label>
+  <input id="folderName" name="folderName" placeholder="testYYYYMMDDHHMMSS">
+
+  <label for="operators">Operators <span class="muted">(start.sh -o, CSV)</span></label>
+  <input id="operators" name="operators" placeholder="netobserv-operator">
+
+  <label class="check"><input type="checkbox" name="infra" value="true"> Infra <span class="muted">(start.sh -i)</span></label>
+  <label class="check"><input type="checkbox" name="upgrade" value="true"> Upgrade <span class="muted">(start.sh -u)</span></label>
+
+  <label for="clusterTopology">Cluster topology <span class="muted">(CLUSTER_TOPOLOGY)</span></label>
+  <input id="clusterTopology" name="clusterTopology" placeholder="small">
+
+  <label for="importDashboard">Import dashboard <span class="muted">(IMPORT_DASHBOARD)</span></label>
+  <input id="importDashboard" name="importDashboard" placeholder="/path/to/dashboard.json">
+
+  <h2 class="form-section">Slack (optional)</h2>
+
+  <label for="slackMember">Slack member <span class="muted">(SLACK_MEMBER)</span></label>
+  <input id="slackMember" name="slackMember" placeholder="U00000000">
+
+  <label for="slackChannel">Slack channel <span class="muted">(SLACK_CHANNEL)</span></label>
+  <input id="slackChannel" name="slackChannel" placeholder="C00000000">
+
+  <label for="slackAPITokenSecret">Slack API token secret</label>
+  <select id="slackAPITokenSecret" name="slackAPITokenSecret">
+    <option value="">(none)</option>
+    {{range .AuthSecrets}}
+    <option value="{{.Name}}">{{.Name}}</option>
+    {{end}}
+  </select>
+  <label for="slackAPITokenKey">Slack API token key</label>
+  <input id="slackAPITokenKey" name="slackAPITokenKey" placeholder="api-token">
+
+  <label for="slackWebhookSecret">Slack webhook URL secret</label>
+  <select id="slackWebhookSecret" name="slackWebhookSecret">
+    <option value="">(none)</option>
+    {{range .AuthSecrets}}
+    <option value="{{.Name}}">{{.Name}}</option>
+    {{end}}
+  </select>
+  <label for="slackWebhookKey">Slack webhook URL key</label>
+  <input id="slackWebhookKey" name="slackWebhookKey" placeholder="webhook-url">
+
+  <div class="toolbar" style="margin-top:1.25rem">
+    <button class="btn primary" type="submit">Create</button>
+    <a class="btn" href="/">Cancel</a>
+  </div>
+</form>
+{{end}}

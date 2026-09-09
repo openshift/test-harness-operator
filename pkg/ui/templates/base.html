@@ -1,0 +1,117 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{block "title" .}}Test Harness{{end}}</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4d;
+      --text: #e7ecf3;
+      --muted: #8b9bb4;
+      --accent: #3d9cf0;
+      --danger: #e85d5d;
+      --ok: #3ecf8e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 0.85rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    header .brand { font-weight: 650; letter-spacing: 0.02em; }
+    nav a { color: var(--muted); margin-right: 1rem; }
+    nav a.active { color: var(--text); }
+    main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+    h1 { font-size: 1.35rem; margin: 0 0 1rem; font-weight: 600; }
+    .toolbar { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); }
+    th, td { text-align: left; padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+    th { color: var(--muted); font-weight: 500; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .phase { font-family: ui-monospace, monospace; font-size: 0.85rem; }
+    .phase.Running, .phase.Succeeded { color: var(--ok); }
+    .phase.Failed { color: var(--danger); }
+    .phase.Pending { color: var(--muted); }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1rem 1.15rem;
+      margin-bottom: 1rem;
+    }
+    .card h2 { font-size: 0.95rem; margin: 0 0 0.75rem; color: var(--muted); font-weight: 550; text-transform: uppercase; letter-spacing: 0.04em; }
+    dl { display: grid; grid-template-columns: 10rem 1fr; gap: 0.35rem 1rem; margin: 0; }
+    dt { color: var(--muted); }
+    dd { margin: 0; word-break: break-all; }
+    form.stack label { display: block; margin: 0.75rem 0 0.25rem; color: var(--muted); font-size: 0.9rem; }
+    form.stack label.check { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.9rem; color: var(--text); }
+    form.stack input, form.stack select, form.stack textarea {
+      width: 100%;
+      max-width: 32rem;
+      padding: 0.5rem 0.65rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font: inherit;
+    }
+    form.stack textarea {
+      max-width: 48rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+    }
+    form.stack input[type="checkbox"] { width: auto; max-width: none; }
+    .form-section { font-size: 0.95rem; margin: 1.5rem 0 0.25rem; color: var(--muted); font-weight: 550; text-transform: uppercase; letter-spacing: 0.04em; }
+    .btn {
+      display: inline-block;
+      padding: 0.45rem 0.9rem;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+    }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #061018; font-weight: 600; }
+    .btn.danger { border-color: var(--danger); color: var(--danger); }
+    .error { color: var(--danger); margin: 0.75rem 0; }
+    .muted { color: var(--muted); }
+    pre.logs {
+      background: #0a0e13;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      overflow: auto;
+      max-height: 70vh;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Test Harness</div>
+    <nav>
+      <a href="/" class="nav-link{{if eq .Section `tests`}} active{{end}}">Reliability Tests</a>
+      <a href="/secrets" class="nav-link{{if eq .Section `secrets`}} active{{end}}">Auth Secrets</a>
+    </nav>
+  </header>
+  <main>
+    {{template "content" .}}
+  </main>
+</body>
+</html>
+{{end}}
