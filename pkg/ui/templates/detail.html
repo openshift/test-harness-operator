@@ -1,0 +1,115 @@
+{{define "title"}}{{.Test.Name}}{{end}}
+{{define "content"}}
+<div id="test-page" data-name="{{.Test.Name}}" data-expected-pod="{{.ExpectedPod}}">
+<div class="toolbar">
+  <a href="/">← Tests</a>
+  <span class="muted">watching live</span>
+</div>
+<h1>{{.Test.Name}}</h1>
+{{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+
+<div class="card">
+  <h2>ReliabilityTest</h2>
+  <dl>
+    <dt>Phase</dt><dd><span id="test-phase" class="phase {{.Test.Phase}}">{{.Test.Phase}}</span></dd>
+    <dt>Scenario</dt><dd>{{.Test.Scenario}}</dd>
+    <dt>Duration</dt><dd>{{.Test.Duration}}</dd>
+    <dt>Image</dt><dd>{{.Test.Image}}</dd>
+    <dt>Auth secret</dt><dd>{{.Test.AuthSecret}}</dd>
+    <dt>Tolerance rate</dt><dd>{{.Test.ToleranceRate}}</dd>
+    <dt>Folder name</dt><dd>{{.Test.FolderName}}</dd>
+    <dt>Operators</dt><dd>{{.Test.Operators}}</dd>
+    <dt>Infra</dt><dd>{{.Test.Infra}}</dd>
+    <dt>Upgrade</dt><dd>{{.Test.Upgrade}}</dd>
+    <dt>Cluster topology</dt><dd>{{.Test.ClusterTopology}}</dd>
+    <dt>Import dashboard</dt><dd>{{.Test.ImportDashboard}}</dd>
+    <dt>Slack member</dt><dd>{{.Test.SlackMember}}</dd>
+    <dt>Slack channel</dt><dd>{{.Test.SlackChannel}}</dd>
+    <dt>Slack API token</dt><dd>{{.Test.SlackAPIToken}}</dd>
+    <dt>Slack webhook</dt><dd>{{.Test.SlackWebhook}}</dd>
+    <dt>Message</dt><dd id="test-message">{{.Test.Message}}</dd>
+    <dt>Created</dt><dd>{{.Test.Created}}</dd>
+  </dl>
+</div>
+
+<div class="card" id="pod-card">
+  <h2>Runner pod</h2>
+  <div id="pod-body">
+  {{if .Pod}}
+  <dl>
+    <dt>Name</dt><dd id="pod-name">{{.Pod.Name}}</dd>
+    <dt>Phase</dt><dd><span id="pod-phase" class="phase {{.Pod.Phase}}">{{.Pod.Phase}}</span></dd>
+    <dt>Reason</dt><dd id="pod-reason">{{.Pod.Reason}}</dd>
+    <dt>Message</dt><dd id="pod-message">{{.Pod.Message}}</dd>
+    <dt>Node</dt><dd id="pod-node">{{.Pod.Node}}</dd>
+    <dt>Started</dt><dd id="pod-started">{{.Pod.Started}}</dd>
+  </dl>
+  <div class="toolbar" style="margin-top:0.75rem">
+    <a class="btn primary" href="/tests/{{.Test.Name}}/logs">View logs</a>
+  </div>
+  {{else}}
+  <p class="muted" id="pod-missing">No runner pod yet (expected name: {{.ExpectedPod}}).</p>
+  {{end}}
+  </div>
+</div>
+
+<form method="post" action="/tests/{{.Test.Name}}/delete" onsubmit="return confirm('Delete {{.Test.Name}}?');">
+  <button class="btn danger" type="submit">Delete test</button>
+</form>
+</div>
+<script>
+(function () {
+  const page = document.getElementById("test-page");
+  const name = page.dataset.name;
+  const expectedPod = page.dataset.expectedPod;
+  function setPhase(el, phase) {
+    if (!el) return;
+    el.textContent = phase || "";
+    el.className = "phase " + (phase || "");
+  }
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value || "";
+  }
+  function renderPod(pod) {
+    const body = document.getElementById("pod-body");
+    if (!body) return;
+    if (!pod) {
+      body.innerHTML = '<p class="muted" id="pod-missing">No runner pod yet (expected name: ' + expectedPod + ').</p>';
+      return;
+    }
+    body.innerHTML =
+      "<dl>" +
+      "<dt>Name</dt><dd id=\"pod-name\"></dd>" +
+      "<dt>Phase</dt><dd><span id=\"pod-phase\" class=\"phase\"></span></dd>" +
+      "<dt>Reason</dt><dd id=\"pod-reason\"></dd>" +
+      "<dt>Message</dt><dd id=\"pod-message\"></dd>" +
+      "<dt>Node</dt><dd id=\"pod-node\"></dd>" +
+      "<dt>Started</dt><dd id=\"pod-started\"></dd>" +
+      "</dl>" +
+      "<div class=\"toolbar\" style=\"margin-top:0.75rem\">" +
+      "<a class=\"btn primary\" href=\"/tests/" + name + "/logs\">View logs</a>" +
+      "</div>";
+    setText("pod-name", pod.name);
+    setPhase(document.getElementById("pod-phase"), pod.phase);
+    setText("pod-reason", pod.reason);
+    setText("pod-message", pod.message);
+    setText("pod-node", pod.node);
+    setText("pod-started", pod.started);
+  }
+  function refresh() {
+    fetch("/api/tests/" + encodeURIComponent(name))
+      .then(function (r) { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+      .then(function (data) {
+        if (!data.test) return;
+        setPhase(document.getElementById("test-phase"), data.test.phase);
+        setText("test-message", data.test.message);
+        renderPod(data.pod);
+      })
+      .catch(function () { /* keep last good view */ });
+  }
+  const es = new EventSource("/watch/tests/" + encodeURIComponent(name));
+  es.onmessage = refresh;
+})();
+</script>
+{{end}}

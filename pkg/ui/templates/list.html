@@ -1,0 +1,72 @@
+{{define "title"}}Reliability Tests{{end}}
+{{define "content"}}
+<h1>Reliability Tests</h1>
+<div class="toolbar">
+  <a class="btn primary" href="/tests/new">New test</a>
+  <a class="btn" href="/secrets">Auth secrets</a>
+  <span class="muted">watching live</span>
+</div>
+{{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+<div id="tests-root">
+{{if .Tests}}
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Scenario</th>
+      <th>Phase</th>
+      <th>Pod</th>
+      <th>Age</th>
+    </tr>
+  </thead>
+  <tbody id="tests-body">
+  {{range .Tests}}
+    <tr data-name="{{.Name}}">
+      <td><a href="/tests/{{.Name}}">{{.Name}}</a></td>
+      <td>{{.Scenario}}</td>
+      <td><span class="phase {{.Phase}}">{{.Phase}}</span></td>
+      <td>{{.PodName}}</td>
+      <td>{{.Age}}</td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="muted" id="tests-empty">No ReliabilityTests in namespace {{.Namespace}}.</p>
+{{end}}
+</div>
+<script>
+(function () {
+  const root = document.getElementById("tests-root");
+  function render(tests) {
+    if (!tests || tests.length === 0) {
+      root.innerHTML = '<p class="muted" id="tests-empty">No ReliabilityTests in namespace.</p>';
+      return;
+    }
+    let rows = "";
+    for (let i = 0; i < tests.length; i++) {
+      const t = tests[i];
+      rows += "<tr data-name=\"" + t.name + "\">" +
+        "<td><a href=\"/tests/" + t.name + "\">" + t.name + "</a></td>" +
+        "<td>" + (t.scenario || "") + "</td>" +
+        "<td><span class=\"phase " + (t.phase || "") + "\">" + (t.phase || "") + "</span></td>" +
+        "<td>" + (t.podName || "") + "</td>" +
+        "<td>" + (t.age || "") + "</td>" +
+        "</tr>";
+    }
+    root.innerHTML =
+      "<table><thead><tr>" +
+      "<th>Name</th><th>Scenario</th><th>Phase</th><th>Pod</th><th>Age</th>" +
+      "</tr></thead><tbody id=\"tests-body\">" + rows + "</tbody></table>";
+  }
+  function refresh() {
+    fetch("/api/tests")
+      .then(function (r) { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+      .then(render)
+      .catch(function () { /* keep last good view */ });
+  }
+  const es = new EventSource("/watch/tests");
+  es.onmessage = refresh;
+})();
+</script>
+{{end}}
