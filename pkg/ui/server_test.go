@@ -11,8 +11,115 @@ import (
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 
-	reliabilitytestv1alpha1 "github.com/droslean/test-harness-operator/pkg/api/reliabilitytest/v1alpha1"
+	reliabilitytestv1alpha1 "github.com/openshift/test-harness-operator/pkg/api/reliabilitytest/v1alpha1"
 )
+
+func TestLogFileName(t *testing.T) {
+	testCases := []struct {
+		name    string
+		in      string
+		want    string
+		wantErr bool
+	}{
+		{name: "log file", in: "reliability.log", want: "reliability.log"},
+		{name: "empty", in: "", wantErr: true},
+		{name: "dot", in: ".", wantErr: true},
+		{name: "parent", in: "..", wantErr: true},
+		{name: "slash", in: "a/b", wantErr: true},
+		{name: "backslash", in: `a\b`, wantErr: true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := logFileName(tc.in)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("logFileName() error = nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("logFileName() error: %v", err)
+			}
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatalf("logFileName() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestLogFileNames(t *testing.T) {
+	testCases := []struct {
+		name string
+		in   string
+		want []string
+	}{
+		{name: "empty", in: "", want: []string{}},
+		{
+			name: "files",
+			in:   "start_1.log\nreliability.log\n../secret\n",
+			want: []string{"reliability.log", "start_1.log"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := logFileNames(tc.in)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatalf("logFileNames() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestLogDirFromFind(t *testing.T) {
+	testCases := []struct {
+		name    string
+		in      string
+		want    string
+		wantErr bool
+	}{
+		{name: "suite folder", in: "/reliability-v2/run1/reliability.log\n", want: "/reliability-v2/run1"},
+		{name: "empty", in: "", wantErr: true},
+		{name: "suite root", in: "/reliability-v2/reliability.log\n", wantErr: true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := logDirFromFind(tc.in)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("logDirFromFind() error = nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("logDirFromFind() error: %v", err)
+			}
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatalf("logDirFromFind() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestLogsTemplate(t *testing.T) {
+	tmpl, err := template.ParseFS(templateFS, "templates/base.html", "templates/logs.html")
+	if err != nil {
+		t.Fatalf("ParseFS: %v", err)
+	}
+	var buf bytes.Buffer
+	data := pageData{Section: "tests", TestName: "small", PodName: "small-runner"}
+	if err := tmpl.ExecuteTemplate(&buf, "base", data); err != nil {
+		t.Fatalf("ExecuteTemplate: %v", err)
+	}
+	out := buf.String()
+	for _, needle := range []string{`id="show-stdout"`, ">Stdout<", `id="log-files"`, `const testName = "small"`, "/logs/stream", "/logs/files"} {
+		if !strings.Contains(out, needle) {
+			t.Fatalf("logs page missing %q:\n%s", needle, out)
+		}
+	}
+}
 
 func TestRenderNav(t *testing.T) {
 	testCases := []struct {

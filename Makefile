@@ -7,6 +7,7 @@ $(CONTROLLER_GEN):
 build:
 	GOFLAGS="-mod=mod" CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o test-harness-operator ./cmd/test-harness-operator
 	GOFLAGS="-mod=mod" CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o test-harness-ui ./cmd/test-harness-ui
+	GOFLAGS="-mod=mod" CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o reliability-runner ./cmd/reliability-runner
 
 .PHONY: generate
 generate: $(CONTROLLER_GEN)

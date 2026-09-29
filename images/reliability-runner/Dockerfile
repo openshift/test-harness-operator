@@ -8,7 +8,11 @@ RUN curl -sSL "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OC_VE
     && mv oc /bin \
     && mv kubectl /bin \
     && apt-get update \
-    && apt-get install -y gettext-base uuid-runtime jq \
+    && apt-get install -y -t bullseye gettext-base uuid-runtime jq unzip \
+    && curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip \
+    && unzip -q /tmp/awscliv2.zip -d /tmp \
+    && /tmp/aws/install \
+    && rm -rf /tmp/aws /tmp/awscliv2.zip \
     && ln -sf /bin/bash /usr/bin/bash \
     && /usr/local/bin/python -m pip install --upgrade pip \
     && rm -rf /var/lib/apt/lists/*
@@ -21,3 +25,6 @@ RUN curl -sSL "https://github.com/openshift/svt/archive/${SVT_REF}.tar.gz" \
     && chmod +x start.sh \
     && chgrp -R 0 /reliability-v2 \
     && chmod -R g+rwX /reliability-v2
+
+COPY reliability-runner /usr/local/bin/reliability-runner
+ENTRYPOINT ["/usr/local/bin/reliability-runner"]

@@ -21,8 +21,8 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	reliabilitytestv1alpha1 "github.com/droslean/test-harness-operator/pkg/api/reliabilitytest/v1alpha1"
-	"github.com/droslean/test-harness-operator/pkg/controller"
+	reliabilitytestv1alpha1 "github.com/openshift/test-harness-operator/pkg/api/reliabilitytest/v1alpha1"
+	"github.com/openshift/test-harness-operator/pkg/controller"
 )
 
 //go:embed templates/*.html
@@ -34,6 +34,7 @@ const managedByTestHarnessOperatorLabel = "harness.testharness.io/managed-by-tes
 type Server struct {
 	client    client.WithWatch
 	kube      kubernetes.Interface
+	config    *rest.Config
 	namespace string
 	pages     map[string]*template.Template
 }
@@ -47,6 +48,7 @@ func New(cfg *rest.Config, c client.WithWatch, namespace string) (*Server, error
 	s := &Server{
 		client:    c,
 		kube:      kube,
+		config:    cfg,
 		namespace: namespace,
 		pages:     map[string]*template.Template{},
 	}
@@ -328,18 +330,18 @@ func (s *Server) handleTests(w http.ResponseWriter, r *http.Request) {
 			Namespace: s.namespace,
 		},
 		Spec: reliabilitytestv1alpha1.ReliabilityTestSpec{
-			Scenario:         scenario,
-			AuthSecretRef:    corev1.LocalObjectReference{Name: authSecret},
-			Duration:         strings.TrimSpace(r.FormValue("duration")),
-			Image:            strings.TrimSpace(r.FormValue("image")),
-			ToleranceRate:    strings.TrimSpace(r.FormValue("toleranceRate")),
-			FolderName:       strings.TrimSpace(r.FormValue("folderName")),
-			Operators:        strings.TrimSpace(r.FormValue("operators")),
-			Infra:            r.FormValue("infra") == "true",
-			Upgrade:          r.FormValue("upgrade") == "true",
-			ClusterTopology:  strings.TrimSpace(r.FormValue("clusterTopology")),
-			ImportDashboard:  strings.TrimSpace(r.FormValue("importDashboard")),
-			Slack:            slackSpecFromForm(r),
+			Scenario:        scenario,
+			AuthSecretRef:   corev1.LocalObjectReference{Name: authSecret},
+			Duration:        strings.TrimSpace(r.FormValue("duration")),
+			Image:           strings.TrimSpace(r.FormValue("image")),
+			ToleranceRate:   strings.TrimSpace(r.FormValue("toleranceRate")),
+			FolderName:      strings.TrimSpace(r.FormValue("folderName")),
+			Operators:       strings.TrimSpace(r.FormValue("operators")),
+			Infra:           r.FormValue("infra") == "true",
+			Upgrade:         r.FormValue("upgrade") == "true",
+			ClusterTopology: strings.TrimSpace(r.FormValue("clusterTopology")),
+			ImportDashboard: strings.TrimSpace(r.FormValue("importDashboard")),
+			Slack:           slackSpecFromForm(r),
 		},
 	}
 	if err := s.client.Create(r.Context(), test); err != nil {
@@ -372,11 +374,18 @@ func (s *Server) handleTestPath(w http.ResponseWriter, r *http.Request) {
 	case "delete":
 		s.handleDelete(w, r, name)
 	case "logs":
-		if len(parts) >= 3 && parts[2] == "stream" {
+		switch {
+		case len(parts) == 3 && parts[2] == "stream":
 			s.handleLogsStream(w, r, name)
-			return
+		case len(parts) == 3 && parts[2] == "files":
+			s.handleLogFiles(w, r, name)
+		case len(parts) == 4 && parts[2] == "files":
+			s.handleLogFile(w, r, name, parts[3])
+		case len(parts) == 2:
+			s.handleLogs(w, r, name)
+		default:
+			http.NotFound(w, r)
 		}
-		s.handleLogs(w, r, name)
 	default:
 		http.NotFound(w, r)
 	}

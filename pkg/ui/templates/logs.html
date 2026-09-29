@@ -2,18 +2,31 @@
 {{define "content"}}
 <div class="toolbar">
   <a href="/tests/{{.TestName}}">← {{.TestName}}</a>
-  <span class="muted">Pod {{.PodName}} · live stream</span>
+  <span class="muted">Pod {{.PodName}}</span>
 </div>
 <h1>Runner logs</h1>
 {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
-<pre id="logs" class="logs">connecting…</pre>
+<div class="log-browser">
+  <div>
+    <button type="button" id="show-stdout" class="btn primary">Stdout</button>
+    <ul id="log-files" class="log-files"></ul>
+  </div>
+  <pre id="logs" class="logs">connecting…</pre>
+</div>
 <script>
 (function () {
+  const testName = "{{.TestName | js}}";
   const el = document.getElementById("logs");
+  const list = document.getElementById("log-files");
+  const stdoutBtn = document.getElementById("show-stdout");
+  let streamCtrl = null;
+  let fileCtrl = null;
   let stick = true;
+
   el.addEventListener("scroll", function () {
     stick = el.scrollTop + el.clientHeight >= el.scrollHeight - 24;
   });
+
   function append(text) {
     if (el.textContent === "connecting…" || el.textContent === "(no log output yet)") {
       el.textContent = "";
@@ -23,34 +36,136 @@
       el.scrollTop = el.scrollHeight;
     }
   }
-  fetch("/tests/{{.TestName}}/logs/stream")
+
+  function clearActiveFiles() {
+    list.querySelectorAll("button.active").forEach(function (btn) {
+      btn.classList.remove("active");
+    });
+  }
+
+  function stopStream() {
+    if (streamCtrl) {
+      streamCtrl.abort();
+      streamCtrl = null;
+    }
+  }
+
+  function stopFile() {
+    if (fileCtrl) {
+      fileCtrl.abort();
+      fileCtrl = null;
+    }
+  }
+
+  function openStdout() {
+    stopFile();
+    clearActiveFiles();
+    stdoutBtn.classList.add("primary");
+    stick = true;
+    el.textContent = "connecting…";
+    stopStream();
+    streamCtrl = new AbortController();
+    fetch("/tests/" + encodeURIComponent(testName) + "/logs/stream", { signal: streamCtrl.signal })
+      .then(function (res) {
+        if (!res.ok) {
+          return res.text().then(function (t) {
+            throw new Error(t || res.statusText);
+          });
+        }
+        if (!res.body) {
+          throw new Error("no response body");
+        }
+        el.textContent = "";
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        function read() {
+          return reader.read().then(function (result) {
+            if (result.done) {
+              append("\n--- stream ended ---\n");
+              return;
+            }
+            append(decoder.decode(result.value, { stream: true }));
+            return read();
+          });
+        }
+        return read();
+      })
+      .catch(function (err) {
+        if (err.name === "AbortError") {
+          return;
+        }
+        el.textContent = String(err.message || err);
+      });
+  }
+
+  function openFile(name, btn) {
+    stopStream();
+    stopFile();
+    clearActiveFiles();
+    stdoutBtn.classList.remove("primary");
+    btn.classList.add("active");
+    el.textContent = "loading…";
+    fileCtrl = new AbortController();
+    fetch("/tests/" + encodeURIComponent(testName) + "/logs/files/" + encodeURIComponent(name), { signal: fileCtrl.signal })
+      .then(function (res) {
+        if (!res.ok) {
+          return res.text().then(function (t) {
+            throw new Error(t || res.statusText);
+          });
+        }
+        return res.text();
+      })
+      .then(function (text) {
+        el.textContent = text === "" ? "(empty)" : text;
+        el.scrollTop = 0;
+      })
+      .catch(function (err) {
+        if (err.name === "AbortError") {
+          return;
+        }
+        el.textContent = String(err.message || err);
+      });
+  }
+
+  function renderFiles(names) {
+    list.replaceChildren();
+    if (!names.length) {
+      const li = document.createElement("li");
+      li.className = "muted";
+      li.textContent = "(no files)";
+      list.appendChild(li);
+      return;
+    }
+    names.forEach(function (name) {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = name;
+      btn.addEventListener("click", function () { openFile(name, btn); });
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+  }
+
+  stdoutBtn.addEventListener("click", openStdout);
+  fetch("/tests/" + encodeURIComponent(testName) + "/logs/files")
     .then(function (res) {
       if (!res.ok) {
         return res.text().then(function (t) {
           throw new Error(t || res.statusText);
         });
       }
-      if (!res.body) {
-        throw new Error("no response body");
-      }
-      el.textContent = "";
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      function read() {
-        return reader.read().then(function (result) {
-          if (result.done) {
-            append("\n--- stream ended ---\n");
-            return;
-          }
-          append(decoder.decode(result.value, { stream: true }));
-          return read();
-        });
-      }
-      return read();
+      return res.json();
     })
+    .then(renderFiles)
     .catch(function (err) {
-      el.textContent = String(err.message || err);
+      list.replaceChildren();
+      const li = document.createElement("li");
+      li.className = "muted";
+      li.textContent = String(err.message || err);
+      list.appendChild(li);
     });
+  openStdout();
 })();
 </script>
 {{end}}
