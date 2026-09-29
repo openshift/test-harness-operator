@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/openshift/test-harness-operator/pkg/artifacts"
 	"github.com/openshift/test-harness-operator/pkg/controller"
+	"github.com/openshift/test-harness-operator/pkg/runner"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
@@ -62,7 +62,7 @@ func (s *Server) handleLogFile(w http.ResponseWriter, r *http.Request, name, fil
 
 func (s *Server) suiteOutputDir(ctx context.Context, testName string) (string, error) {
 	out, err := s.exec(ctx, controller.RunnerPodName(testName), []string{
-		"find", artifacts.SuiteDir, "-mindepth", "2", "-maxdepth", "2", "-name", "reliability.log", "-print", "-quit",
+		"find", runner.SuiteDir, "-mindepth", "2", "-maxdepth", "2", "-name", "reliability.log", "-print", "-quit",
 	})
 	if err != nil {
 		return "", err
@@ -76,7 +76,7 @@ func logDirFromFind(out string) (string, error) {
 		return "", fmt.Errorf("log directory not found")
 	}
 	dir := path.Dir(line)
-	if dir == "." || dir == "/" || dir == artifacts.SuiteDir {
+	if dir == "." || dir == "/" || dir == runner.SuiteDir {
 		return "", fmt.Errorf("log directory not found")
 	}
 	return dir, nil
@@ -112,7 +112,7 @@ func (s *Server) exec(ctx context.Context, podName string, command []string) ([]
 		Namespace(s.namespace).
 		SubResource("exec").
 		VersionedParams(&corev1.PodExecOptions{
-			Container: artifacts.TestContainer,
+			Container: controller.TestContainer,
 			Command:   command,
 			Stdout:    true,
 			Stderr:    true,

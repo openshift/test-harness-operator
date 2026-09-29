@@ -35,7 +35,7 @@ func gatherOptions() options {
 	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	fs.StringVar(&o.namespace, "namespace", "", "Namespace the operator watches.")
 	fs.StringVar(&o.gcsBucket, "gcs-bucket", "", "GCS bucket for test artifacts.")
-	fs.StringVar(&o.gcsCredentialsSecret, "gcs-credentials-secret", "", "Secret in the watched namespace containing the GCS service account key service-account.json.")
+	fs.StringVar(&o.gcsCredentialsSecret, "gcs-credentials-secret", "test-harness-gcs-credentials", "Name of the Secret in the watched namespace. The test pod mounts its service-account.json key.")
 	if err := fs.Parse(os.Args[1:]); err != nil {
 		logrus.WithError(err).Fatal("failed to parse flags")
 	}

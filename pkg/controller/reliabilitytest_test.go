@@ -9,7 +9,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	reliabilitytestv1alpha1 "github.com/openshift/test-harness-operator/pkg/api/reliabilitytest/v1alpha1"
-	"github.com/openshift/test-harness-operator/pkg/artifacts"
 	"github.com/openshift/test-harness-operator/pkg/runner"
 )
 
@@ -76,11 +75,11 @@ func TestBuildRunnerPod(t *testing.T) {
 				t.Fatalf("startedMetadataJSON() error: %v", err)
 			}
 			env := append(append([]corev1.EnvVar{}, tc.env...),
-				corev1.EnvVar{Name: artifacts.EnvBucket, Value: reconciler.GCSBucket},
-				corev1.EnvVar{Name: artifacts.EnvTestName, Value: tc.test.Name},
+				corev1.EnvVar{Name: runner.EnvBucket, Value: reconciler.GCSBucket},
+				corev1.EnvVar{Name: runner.EnvTestName, Value: tc.test.Name},
 				corev1.EnvVar{Name: runner.EnvMetadata, Value: string(meta)},
-				downwardEnv(artifacts.EnvPodNamespace, "metadata.namespace"),
-				downwardEnv(artifacts.EnvPodUID, "metadata.uid"),
+				downwardEnv(runner.EnvPodNamespace, "metadata.namespace"),
+				downwardEnv(runner.EnvPodUID, "metadata.uid"),
 			)
 			options, err := runnerOptionEnv(tc.test)
 			if err != nil {
