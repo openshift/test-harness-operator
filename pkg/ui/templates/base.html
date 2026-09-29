@@ -98,6 +98,39 @@
       font-size: 0.8rem;
       white-space: pre-wrap;
       word-break: break-word;
+      margin: 0;
+    }
+    .log-browser {
+      display: grid;
+      grid-template-columns: 16rem 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+    .log-files {
+      list-style: none;
+      margin: 0.75rem 0 0;
+      padding: 0;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      max-height: 70vh;
+      overflow: auto;
+    }
+    .log-files li.muted { padding: 0.5rem 0.75rem; }
+    .log-files button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem 0.75rem;
+      font: inherit;
+      cursor: pointer;
+    }
+    .log-files button.active { background: var(--bg); color: var(--accent); }
+    @media (max-width: 700px) {
+      .log-browser { grid-template-columns: 1fr; }
     }
   </style>
 </head>
