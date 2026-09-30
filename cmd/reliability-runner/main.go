@@ -27,7 +27,7 @@ func run(ctx context.Context) int {
 		logrus.WithError(err).Error("runner configuration")
 		return 1
 	}
-	client, err := artifacts.NewClient(ctx, cfg.bucket, cfg.namespace, cfg.testName, cfg.podUID)
+	client, err := artifacts.NewClient(ctx, runner.CredentialsFile, cfg.bucket, cfg.namespace, cfg.testName, cfg.podUID)
 	if err != nil {
 		logrus.WithError(err).Error("create gcs client")
 		return 1
@@ -39,7 +39,7 @@ func run(ctx context.Context) int {
 	}()
 
 	return runner.Run(ctx, runner.Options{
-		SuiteDir: artifacts.SuiteDir,
+		SuiteDir: runner.SuiteDir,
 		Metadata: []byte(cfg.metadata),
 		PodUID:   cfg.podUID,
 		Upload: func(ctx context.Context, dir string) error {
@@ -59,16 +59,16 @@ type config struct {
 func fromEnv() (config, error) {
 	cfg := config{}
 	var err error
-	if cfg.bucket, err = requiredEnv(artifacts.EnvBucket); err != nil {
+	if cfg.bucket, err = requiredEnv(runner.EnvBucket); err != nil {
 		return config{}, err
 	}
-	if cfg.testName, err = requiredEnv(artifacts.EnvTestName); err != nil {
+	if cfg.testName, err = requiredEnv(runner.EnvTestName); err != nil {
 		return config{}, err
 	}
-	if cfg.namespace, err = requiredEnv(artifacts.EnvPodNamespace); err != nil {
+	if cfg.namespace, err = requiredEnv(runner.EnvPodNamespace); err != nil {
 		return config{}, err
 	}
-	if cfg.podUID, err = requiredEnv(artifacts.EnvPodUID); err != nil {
+	if cfg.podUID, err = requiredEnv(runner.EnvPodUID); err != nil {
 		return config{}, err
 	}
 	if cfg.metadata, err = requiredEnv(runner.EnvMetadata); err != nil {

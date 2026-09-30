@@ -23,9 +23,9 @@ type Client struct {
 	prefix  string
 }
 
-// NewClient authenticates with the mounted service account and uploads under namespace/name/uid.
-func NewClient(ctx context.Context, bucket, namespace, name, uid string) (*Client, error) {
-	sc, err := storage.NewClient(ctx, option.WithAuthCredentialsFile(option.ServiceAccount, CredentialsFile))
+// NewClient authenticates with the service account file and uploads under namespace/name/uid.
+func NewClient(ctx context.Context, credentialsFile, bucket, namespace, name, uid string) (*Client, error) {
+	sc, err := storage.NewClient(ctx, option.WithAuthCredentialsFile(option.ServiceAccount, credentialsFile))
 	if err != nil {
 		return nil, err
 	}

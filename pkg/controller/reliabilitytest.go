@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	reliabilitytestv1alpha1 "github.com/openshift/test-harness-operator/pkg/api/reliabilitytest/v1alpha1"
-	"github.com/openshift/test-harness-operator/pkg/artifacts"
 	"github.com/openshift/test-harness-operator/pkg/runner"
 )
 
@@ -25,6 +24,10 @@ const (
 	authMountPath   = "/auth"
 	authVolume      = "auth"
 	gcsVolume       = "gcs"
+
+	// TestContainer is the container in the runner pod.
+	TestContainer = "reliability"
+	runnerBinary  = "/usr/local/bin/reliability-runner"
 )
 
 // RunnerPodName returns the runner pod name for a ReliabilityTest.
@@ -86,11 +89,11 @@ func (r *ReliabilityTestReconciler) buildRunnerPod(test *reliabilitytestv1alpha1
 		return nil, err
 	}
 	env := append(test.Spec.StartShEnv(authMountPath),
-		corev1.EnvVar{Name: artifacts.EnvBucket, Value: r.GCSBucket},
-		corev1.EnvVar{Name: artifacts.EnvTestName, Value: test.Name},
+		corev1.EnvVar{Name: runner.EnvBucket, Value: r.GCSBucket},
+		corev1.EnvVar{Name: runner.EnvTestName, Value: test.Name},
 		corev1.EnvVar{Name: runner.EnvMetadata, Value: string(meta)},
-		downwardEnv(artifacts.EnvPodNamespace, "metadata.namespace"),
-		downwardEnv(artifacts.EnvPodUID, "metadata.uid"),
+		downwardEnv(runner.EnvPodNamespace, "metadata.namespace"),
+		downwardEnv(runner.EnvPodUID, "metadata.uid"),
 	)
 	options, err := runnerOptionEnv(test)
 	if err != nil {
@@ -151,7 +154,7 @@ func runnerVolumes(authSecret, gcsSecret string) []corev1.Volume {
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: gcsSecret,
 					Items: []corev1.KeyToPath{
-						{Key: artifacts.CredentialsKey, Path: artifacts.CredentialsKey},
+						{Key: runner.CredentialsKey, Path: runner.CredentialsKey},
 					},
 				},
 			},
@@ -161,14 +164,14 @@ func runnerVolumes(authSecret, gcsSecret string) []corev1.Volume {
 
 func testContainer(test *reliabilitytestv1alpha1.ReliabilityTest, env []corev1.EnvVar) corev1.Container {
 	return corev1.Container{
-		Name:       artifacts.TestContainer,
+		Name:       TestContainer,
 		Image:      test.Spec.Image,
-		WorkingDir: artifacts.SuiteDir,
-		Command:    []string{artifacts.RunnerBinary},
+		WorkingDir: runner.SuiteDir,
+		Command:    []string{runnerBinary},
 		Env:        env,
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: authVolume, MountPath: authMountPath, ReadOnly: true},
-			{Name: gcsVolume, MountPath: artifacts.CredentialsMount, ReadOnly: true},
+			{Name: gcsVolume, MountPath: runner.CredentialsMount, ReadOnly: true},
 		},
 	}
 }

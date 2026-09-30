@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-
-	"github.com/openshift/test-harness-operator/pkg/artifacts"
 )
 
 const (
@@ -21,6 +19,28 @@ const (
 	EnvOptions = "RUNNER_OPTIONS"
 	// EnvMetadata is the test record JSON the operator sets from the ReliabilityTest.
 	EnvMetadata = "TEST_METADATA"
+	// EnvBucket is the GCS bucket name.
+	EnvBucket = "GCS_BUCKET"
+	// EnvTestName is the ReliabilityTest name.
+	EnvTestName = "TEST_NAME"
+	// EnvPodNamespace is the runner pod namespace, from the downward API.
+	EnvPodNamespace = "POD_NAMESPACE"
+	// EnvPodUID is the runner pod UID, from the downward API.
+	EnvPodUID = "POD_UID"
+
+	// SuiteDir is the reliability-v2 working directory.
+	SuiteDir = "/reliability-v2"
+
+	// CredentialsKey is the Secret key that holds the GCS service account JSON.
+	CredentialsKey = "service-account.json"
+	// CredentialsMount is where the runner pod mounts that Secret.
+	CredentialsMount = "/gcs"
+	// CredentialsFile is the service account JSON the runner reads.
+	CredentialsFile = "/gcs/service-account.json"
+
+	stdoutLog    = "stdout.log"
+	startedFile  = "started.json"
+	finishedFile = "finished.json"
 )
 
 // Metadata is the test record written to started.json.
@@ -118,11 +138,11 @@ func Run(ctx context.Context, opt Options) int {
 		logrus.WithError(err).Error("find suite output")
 		return code
 	}
-	if err := writeJSON(filepath.Join(dir, artifacts.StartedFile), started); err != nil {
+	if err := writeJSON(filepath.Join(dir, startedFile), started); err != nil {
 		logrus.WithError(err).Error("write started.json")
 	}
 	if stdoutPath != "" {
-		if err := moveFile(stdoutPath, filepath.Join(dir, artifacts.StdoutLog)); err != nil {
+		if err := moveFile(stdoutPath, filepath.Join(dir, stdoutLog)); err != nil {
 			logrus.WithError(err).Error("store stdout log")
 		}
 	}
@@ -156,7 +176,7 @@ type Finished struct {
 }
 
 func writeFinished(dir string, timestamp int64, code int) error {
-	return writeJSON(filepath.Join(dir, artifacts.FinishedFile), Finished{
+	return writeJSON(filepath.Join(dir, finishedFile), Finished{
 		Timestamp: timestamp,
 		ExitCode:  code,
 	})
