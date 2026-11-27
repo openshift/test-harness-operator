@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	clusterv1alpha1 "github.com/openshift/test-harness-operator/pkg/api/cluster/v1alpha1"
-	clusterprofiletemplatev1alpha1 "github.com/openshift/test-harness-operator/pkg/api/clusterprofiletemplate/v1alpha1"
+	clustertemplatev1alpha1 "github.com/openshift/test-harness-operator/pkg/api/clustertemplate/v1alpha1"
 	reliabilitytestv1alpha1 "github.com/openshift/test-harness-operator/pkg/api/reliabilitytest/v1alpha1"
 	"github.com/openshift/test-harness-operator/pkg/ui"
 )
@@ -24,7 +24,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(reliabilitytestv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(clusterv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(clusterprofiletemplatev1alpha1.AddToScheme(scheme))
+	utilruntime.Must(clustertemplatev1alpha1.AddToScheme(scheme))
 }
 
 type options struct {

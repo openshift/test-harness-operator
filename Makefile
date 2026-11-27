@@ -18,7 +18,7 @@ generate: $(CONTROLLER_GEN)
 manifests: $(CONTROLLER_GEN)
 	$(CONTROLLER_GEN) crd paths="./pkg/api/reliabilitytest/..." output:crd:artifacts:config=pkg/api/reliabilitytest/v1alpha1
 	$(CONTROLLER_GEN) crd paths="./pkg/api/cluster/..." output:crd:artifacts:config=pkg/api/cluster/v1alpha1
-	$(CONTROLLER_GEN) crd paths="./pkg/api/clusterprofiletemplate/..." output:crd:artifacts:config=pkg/api/clusterprofiletemplate/v1alpha1
+	$(CONTROLLER_GEN) crd paths="./pkg/api/clustertemplate/..." output:crd:artifacts:config=pkg/api/clustertemplate/v1alpha1
 
 .PHONY: test
 test:

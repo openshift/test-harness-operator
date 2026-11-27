@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	clusterv1alpha1 "github.com/openshift/test-harness-operator/pkg/api/cluster/v1alpha1"
-	clusterprofiletemplatev1alpha1 "github.com/openshift/test-harness-operator/pkg/api/clusterprofiletemplate/v1alpha1"
+	clustertemplatev1alpha1 "github.com/openshift/test-harness-operator/pkg/api/clustertemplate/v1alpha1"
 )
 
 var uiScheme = runtime.NewScheme()
@@ -25,7 +25,7 @@ var uiScheme = runtime.NewScheme()
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(uiScheme))
 	utilruntime.Must(clusterv1alpha1.AddToScheme(uiScheme))
-	utilruntime.Must(clusterprofiletemplatev1alpha1.AddToScheme(uiScheme))
+	utilruntime.Must(clustertemplatev1alpha1.AddToScheme(uiScheme))
 }
 
 func TestCloudCredentialSecret(t *testing.T) {
@@ -285,7 +285,7 @@ func TestTemplateFromForm(t *testing.T) {
 		image      string
 		secretName string
 		rawConfig  string
-		want       *clusterprofiletemplatev1alpha1.ClusterProfileTemplate
+		want       *clustertemplatev1alpha1.ClusterTemplate
 		wantErr    bool
 	}{
 		{
@@ -303,9 +303,9 @@ func TestTemplateFromForm(t *testing.T) {
 			image:      "installer:tpl",
 			secretName: "aws-ci",
 			rawConfig:  "baseDomain: example.com\n",
-			want: &clusterprofiletemplatev1alpha1.ClusterProfileTemplate{
+			want: &clustertemplatev1alpha1.ClusterTemplate{
 				ObjectMeta: metav1.ObjectMeta{Name: "aws-default", Namespace: "test-harness"},
-				Spec: clusterprofiletemplatev1alpha1.ClusterProfileTemplateSpec{
+				Spec: clusterv1alpha1.ClusterSpec{
 					InstallerImage: "installer:tpl",
 					InstallConfig: installertypes.InstallConfig{
 						TypeMeta:   metav1.TypeMeta{APIVersion: installertypes.InstallConfigVersion},
@@ -372,9 +372,9 @@ func TestLoadClusterForm(t *testing.T) {
 						Labels:    map[string]string{cloudCredentialsLabel: "true"},
 					},
 				},
-				&clusterprofiletemplatev1alpha1.ClusterProfileTemplate{
+				&clustertemplatev1alpha1.ClusterTemplate{
 					ObjectMeta: metav1.ObjectMeta{Name: "aws", Namespace: "test-harness"},
-					Spec: clusterprofiletemplatev1alpha1.ClusterProfileTemplateSpec{
+					Spec: clusterv1alpha1.ClusterSpec{
 						InstallerImage:       "installer:kept",
 						CredentialsSecretRef: corev1.LocalObjectReference{Name: "aws-ci"},
 						InstallConfig:        installertypes.InstallConfig{ObjectMeta: metav1.ObjectMeta{Name: "from-template"}},
@@ -412,9 +412,9 @@ func TestLoadClusterForm(t *testing.T) {
 						Labels:    map[string]string{cloudCredentialsLabel: "true"},
 					},
 				},
-				&clusterprofiletemplatev1alpha1.ClusterProfileTemplate{
+				&clustertemplatev1alpha1.ClusterTemplate{
 					ObjectMeta: metav1.ObjectMeta{Name: "aws", Namespace: "test-harness"},
-					Spec: clusterprofiletemplatev1alpha1.ClusterProfileTemplateSpec{
+					Spec: clusterv1alpha1.ClusterSpec{
 						InstallerImage:       "installer:kept",
 						CredentialsSecretRef: corev1.LocalObjectReference{Name: "aws-ci"},
 						InstallConfig:        installertypes.InstallConfig{ObjectMeta: metav1.ObjectMeta{Name: "from-template"}},

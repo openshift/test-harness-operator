@@ -1,4 +1,4 @@
-// Package v1alpha1 contains API Schema definitions for the harness.testharness.io v1alpha1 cluster profile template API.
+// Package v1alpha1 contains API Schema definitions for ClusterTemplate.
 // +kubebuilder:object:generate=true
 // +groupName=harness.testharness.io
 package v1alpha1

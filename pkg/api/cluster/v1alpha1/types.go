@@ -15,8 +15,8 @@ const (
 	ClusterPhaseDeleteFailed = "DeleteFailed"
 )
 
-// ClusterSpec is the install configuration for one cluster.
-// It is a copy of a ClusterProfileTemplate spec and does not reference that template.
+// ClusterSpec is the installer image, the install-config, and the cloud credentials Secret.
+// ClusterTemplate stores this same spec. A Cluster copied from a template does not name that template.
 type ClusterSpec struct {
 	// InstallerImage is the container image that provides openshift-install.
 	// +kubebuilder:validation:MinLength=1
@@ -24,6 +24,10 @@ type ClusterSpec struct {
 	InstallerImage string `json:"installerImage"`
 
 	// InstallConfig is the OpenShift install configuration for this cluster.
+	// Stored as an untyped object. The installer schema is not valid in a CRD.
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type=object
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Required
 	InstallConfig installertypes.InstallConfig `json:"installConfig"`
 

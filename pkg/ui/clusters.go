@@ -17,7 +17,7 @@ import (
 
 	installertypes "github.com/openshift/installer/pkg/types"
 	clusterv1alpha1 "github.com/openshift/test-harness-operator/pkg/api/cluster/v1alpha1"
-	clusterprofiletemplatev1alpha1 "github.com/openshift/test-harness-operator/pkg/api/clusterprofiletemplate/v1alpha1"
+	clustertemplatev1alpha1 "github.com/openshift/test-harness-operator/pkg/api/clustertemplate/v1alpha1"
 )
 
 const (
@@ -338,7 +338,7 @@ func (s *Server) handleTemplateDetail(w http.ResponseWriter, r *http.Request, na
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	item := &clusterprofiletemplatev1alpha1.ClusterProfileTemplate{}
+	item := &clustertemplatev1alpha1.ClusterTemplate{}
 	if err := s.client.Get(r.Context(), client.ObjectKey{Namespace: s.namespace, Name: name}, item); err != nil {
 		if apierrors.IsNotFound(err) {
 			http.NotFound(w, r)
@@ -368,7 +368,7 @@ func (s *Server) handleTemplateDelete(w http.ResponseWriter, r *http.Request, na
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	item := &clusterprofiletemplatev1alpha1.ClusterProfileTemplate{}
+	item := &clustertemplatev1alpha1.ClusterTemplate{}
 	if err := s.client.Get(r.Context(), client.ObjectKey{Namespace: s.namespace, Name: name}, item); err != nil {
 		if apierrors.IsNotFound(err) {
 			http.Redirect(w, r, "/clusters/templates", http.StatusSeeOther)
@@ -393,7 +393,7 @@ func (s *Server) loadClusterForm(ctx context.Context, data *pageData) error {
 	}
 	data.CloudSecrets = secrets.Items
 
-	var templates clusterprofiletemplatev1alpha1.ClusterProfileTemplateList
+	var templates clustertemplatev1alpha1.ClusterTemplateList
 	if err := s.client.List(ctx, &templates, client.InNamespace(s.namespace)); err != nil {
 		return err
 	}
@@ -509,17 +509,17 @@ func (s *Server) clusterFromForm(ctx context.Context, name, image, secretName, r
 	}, nil
 }
 
-func (s *Server) templateFromForm(ctx context.Context, name, image, secretName, rawConfig string) (*clusterprofiletemplatev1alpha1.ClusterProfileTemplate, error) {
+func (s *Server) templateFromForm(ctx context.Context, name, image, secretName, rawConfig string) (*clustertemplatev1alpha1.ClusterTemplate, error) {
 	cfg, err := s.installConfigForForm(ctx, name, secretName, rawConfig)
 	if err != nil {
 		return nil, err
 	}
-	return &clusterprofiletemplatev1alpha1.ClusterProfileTemplate{
+	return &clustertemplatev1alpha1.ClusterTemplate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: s.namespace,
 		},
-		Spec: clusterprofiletemplatev1alpha1.ClusterProfileTemplateSpec{
+		Spec: clusterv1alpha1.ClusterSpec{
 			InstallerImage:       image,
 			InstallConfig:        *cfg,
 			CredentialsSecretRef: corev1.LocalObjectReference{Name: secretName},
